@@ -1,0 +1,26 @@
+Package: curl
+Version: 7.68.0
+Depends: libc6 (>= 2.17), libcurl4 (= 7.68.0), zlib1g (>= 1:1.1.4)
+
+Package: libcurl4
+Version: 7.68.0
+Depends: libc6 (>= 2.17), libssl1.1 (>= 1.1.1) | libssl3
+
+Package: libc6
+Version: 2.31-0ubuntu9
+Depends: libgcc-s1
+
+Package: zlib1g
+Version: 1:1.2.11.dfsg-2
+Depends: libc6 (>= 2.14)
+
+Package: libssl1.1
+Version: 1.1.1f-1ubuntu2
+Depends: libc6 (>= 2.14)
+
+Package: libssl3
+Version: 3.0.2-0ubuntu1
+Depends: libc6 (>= 2.34)
+
+Package: libgcc-s1
+Version: 10.3.0-1ubuntu1
