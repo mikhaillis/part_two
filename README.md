@@ -1,14 +1,17 @@
 # Визуализация графа зависимостей
 
-Вариант 9. Этап 2: сбор прямых зависимостей пакетов Ubuntu (apt).
+Вариант 9. Этап 3: построение графа зависимостей (DFS с рекурсией).
 
 ## 1. Общее описание
 
 CLI-инструмент для построения и визуализации графа зависимостей
-менеджера пакетов Ubuntu (apt). На данном этапе реализованы разбор
-параметров командной строки, загрузка индекса Packages (файл или URL)
-и вывод прямых зависимостей заданной версии пакета. Готовые менеджеры
-пакетов и библиотеки для получения зависимостей не используются.
+менеджера пакетов Ubuntu (apt). Реализованы разбор параметров,
+загрузка индекса Packages, построение транзитивного графа
+алгоритмом DFS с рекурсией, ограничение глубины, фильтрация по
+подстроке и обработка циклов. В тестовом режиме граф читается из
+файла, где пакеты названы большими латинскими буквами. Готовые
+менеджеры пакетов и библиотеки для получения зависимостей не
+используются.
 
 ## 2. Описание функций и настроек
 
@@ -18,59 +21,68 @@ CLI-инструмент для построения и визуализации
 |---|---|
 | `--package` | Имя анализируемого пакета |
 | `--repo` | URL индекса Packages или путь к тестовому файлу |
-| `--test-mode` | Режим работы с тестовым репозиторием (локальный файл) |
-| `--pkg-version` | Версия пакета |
+| `--test-mode` | Тестовый репозиторий (файл графа `A -> B`) |
+| `--pkg-version` | Версия пакета (для apt) |
 | `--output` | Имя файла изображения графа |
 | `--max-depth` | Максимальная глубина анализа (>= 1) |
-| `--filter` | Подстрока для фильтрации пакетов |
+| `--filter` | Подстрока: такие пакеты не учитываются |
 
-При запуске приложение печатает прямые зависимости пакета
-(по одной на строку).
+При запуске печатаются рёбра графа в формате `пакет -> зависимость`.
 
 ## 3. Сборка и запуск тестов
 
 ```bat
-python src\main.py --package curl --repo tests\sample_packages.txt ^
-  --test-mode --pkg-version 7.68.0 --output graph.png --max-depth 3 ^
-  --filter lib
+python src\main.py --package A --repo tests\graph_simple.txt ^
+  --test-mode --pkg-version 1 --output graph.png --max-depth 3
 
 run.bat
 test_stage1.bat
 test_stage2.bat
+test_stage3.bat
 ```
 
 ```sh
-python3 src/main.py --package curl --repo tests/sample_packages.txt \
-  --test-mode --pkg-version 7.68.0 --output graph.png --max-depth 3 \
-  --filter lib
+python3 src/main.py --package A --repo tests/graph_simple.txt \
+  --test-mode --pkg-version 1 --output graph.png --max-depth 3
 
 ./run.sh
 ./test_stage1.sh
 ./test_stage2.sh
+./test_stage3.sh
 ```
 
-Пример с URL индекса Ubuntu (без `--test-mode`):
+Apt без тестового режима (локальный индекс или URL):
 
 ```bat
-python src\main.py --package curl ^
-  --repo http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz ^
-  --pkg-version 7.81.0-1 --output graph.png --max-depth 2
+python src\main.py --package curl --repo tests\sample_packages.txt ^
+  --pkg-version 7.68.0 --output graph.png --max-depth 2
 ```
 
 ## 4. Примеры использования
 
-Успешный запуск (тестовый индекс):
+Тестовый граф:
 
 ```text
-libc6
-libcurl4
-zlib1g
+A -> B
+A -> C
+B -> D
+C -> D
 ```
 
-Ошибки:
+Ограничение глубины (`--max-depth 2` на `graph_deep.txt`):
 
 ```text
-ошибка: пакет не найден: nosuchpkg
-ошибка: версия 9.9.9 пакета curl не найдена (доступны: 7.68.0)
-ошибка: индекс пакетов пуст или имеет неверный формат
+A -> B
+B -> C
 ```
+
+Цикл (`graph_cycle.txt`) обрабатывается без зацикливания:
+
+```text
+A -> B
+B -> C
+C -> A
+C -> D
+```
+
+Фильтр `--filter B` исключает пакеты с подстрокой `B`.

@@ -144,15 +144,24 @@ def parse_packages_text(text: str) -> PackageIndex:
     return index
 
 
-def load_repository(repo: str, test_mode: bool) -> PackageIndex:
+def load_repository(repo: str, test_mode: bool = False) -> PackageIndex:
     """
-    Загружает индекс пакетов из файла или по URL.
+    Загружает индекс пакетов из локального файла или по URL.
+
+    Локальный файл используется при test_mode или если repo —
+    путь к существующему файлу.
 
     Raises:
         ValueError: если источник недоступен или пуст.
     """
-    if test_mode:
-        text = _read_local_text(Path(repo))
+    path = Path(repo)
+    use_local = test_mode or path.is_file()
+    if use_local:
+        if not path.is_file():
+            raise ValueError(
+                "не удалось прочитать локальный индекс Packages"
+            )
+        text = _read_local_text(path)
     else:
         raw = _read_url_bytes(repo)
         text = _decode_packages_bytes(raw, repo)
