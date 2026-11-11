@@ -1,6 +1,6 @@
 # Визуализация графа зависимостей
 
-Вариант 9. Этап 4: обратные зависимости (DFS с рекурсией).
+Вариант 9. Этап 5: визуализация графа зависимостей (D2 и PNG).
 
 Репозиторий: https://github.com/mikhaillis/part_two
 
@@ -14,6 +14,8 @@ CLI-инструмент для построения и визуализации
 путь к файлу описания графа, где пакеты названы большими латинскими
 буквами. Режим `--reverse` выводит обратные зависимости — пакеты,
 которые зависят от заданного; для обхода используется тот же DFS.
+На этапе 5 формируется описание графа на языке диаграмм **D2**
+(сохраняется в `.d2`) и изображение графа в формате **PNG**.
 Готовые менеджеры пакетов и библиотеки для получения зависимостей
 не используются.
 
@@ -27,15 +29,16 @@ CLI-инструмент для построения и визуализации
 | `--repo` | URL индекса Packages **или** путь к тестовому файлу |
 | `--test-mode` | Тестовый репозиторий (файл графа `A -> B`) |
 | `--pkg-version` | Версия пакета (для apt) |
-| `--output` | Имя файла изображения графа |
+| `--output` | Имя выходного PNG-файла изображения графа (`.png`) |
 | `--max-depth` | Максимальная глубина анализа (>= 1) |
 | `--filter` | Подстрока: такие пакеты не учитываются |
 | `--reverse` | Вывести обратные зависимости (кто зависит от пакета) |
 
 Без `--test-mode` параметр `--repo` обязан быть URL (`http://` /
-`https://`). При запуске печатаются рёбра графа: `пакет -> зависимость`.
-В режиме `--reverse` рёбра печатаются в том же направлении, но обход
-идёт от заданного пакета к зависящим от него пакетам.
+`https://`). При запуске печатаются рёбра графа (`пакет -> зависимость`),
+рядом с выходным файлом `--output` сохраняется D2-диаграмма (`.d2`)
+и рендерится изображение графа в формате `.png` (через утилиту `d2`,
+а при её отсутствии — встроенным рендерером).
 
 Модули `src/`:
 
@@ -45,6 +48,7 @@ CLI-инструмент для построения и визуализации
 | `apt_repo.py` | Загрузка и разбор индекса Packages |
 | `graph.py` | Прямой граф зависимостей, DFS с рекурсией |
 | `reverse.py` | Обращение графа и обход обратных зависимостей |
+| `visualize.py` | Генерация D2-диаграммы и сохранение PNG |
 | `main.py` | Точка входа, выбор режима |
 
 ## 3. Сборка и запуск тестов
@@ -63,6 +67,7 @@ test_stage1.bat
 test_stage2.bat
 test_stage3.bat
 test_stage4.bat
+test_stage5.bat
 ```
 
 ```sh
@@ -79,31 +84,71 @@ python3 src/main.py --package A --repo tests/graph_simple.txt \
 ./test_stage2.sh
 ./test_stage3.sh
 ./test_stage4.sh
+./test_stage5.sh
 ```
 
-## 4. Примеры использования
+## 4. Примеры использования и визуализации (3 пакета)
 
-Граф по URL (apt, без `--test-mode`):
+### Пакет 1: `jq` (`1.6-2.1ubuntu3`, Ubuntu 22.04 jammy, глубина 2)
 
-```text
-curl -> libc6
-curl -> libcurl4
-curl -> zlib1g
+```sh
+python src/main.py --package jq --repo "$JAMMY" \
+  --pkg-version 1.6-2.1ubuntu3 --output out_jq.png --max-depth 2
+```
+
+Сгенерированный D2 (`out_jq.d2`):
+
+```d2
+"jq" -> "libjq1"
+"libjq1" -> "libc6"
+"libjq1" -> "libonig5"
+"jq" -> "libc6"
+"libc6" -> "libgcc-s1"
+"libc6" -> "libcrypt1"
+```
+
+### Пакет 2: `nano` (`6.2-1`, Ubuntu 22.04 jammy, глубина 2)
+
+```sh
+python src/main.py --package nano --repo "$JAMMY" \
+  --pkg-version 6.2-1 --output out_nano.png --max-depth 2
+```
+
+Сгенерированный D2 (`out_nano.d2`):
+
+```d2
+"nano" -> "libc6"
+"libc6" -> "libgcc-s1"
+"libc6" -> "libcrypt1"
+"nano" -> "libncursesw6"
+"libncursesw6" -> "libtinfo6"
+"libncursesw6" -> "libc6"
+"nano" -> "libtinfo6"
+"libtinfo6" -> "libc6"
+```
+
+### Пакет 3: `curl` (`8.5.0-2ubuntu10`, Ubuntu 24.04 noble, глубина 2)
+
+```sh
+python src/main.py --package curl --repo "$NOBLE" \
+  --pkg-version 8.5.0-2ubuntu10 --output out_curl.png --max-depth 2
+```
+
+Фрагмент D2 (`out_curl.d2`):
+
+```d2
+"curl" -> "libc6"
+"libc6" -> "libgcc-s1"
+"curl" -> "libcurl4t64"
+"libcurl4t64" -> "libbrotli1"
+"libcurl4t64" -> "libc6"
+"libcurl4t64" -> "libgssapi-krb5-2"
 ...
+"curl" -> "zlib1g"
+"zlib1g" -> "libc6"
 ```
 
-Тестовый граф (`--test-mode`):
-
-```text
-A -> B
-A -> C
-B -> D
-C -> D
-```
-
-Ограничение глубины, циклы и `--filter` поддерживаются в обоих режимах.
-
-Обратные зависимости пакета `D` (`tests/graph_reverse.txt`):
+### Обратные зависимости (`--reverse`)
 
 ```text
 python src/main.py --package D --repo tests/graph_reverse.txt \
@@ -117,29 +162,30 @@ E -> D
 F -> E
 ```
 
-Обратные зависимости `curl` по URL (`--max-depth 2`):
-
-```text
-ec2-instance-connect -> curl
-pollinate -> curl
-ubuntu-server -> pollinate
-...
-```
-
 Если от пакета никто не зависит, выводится `обратных зависимостей нет`.
 
-Скрипт `test_stage4` проверяет режим `--reverse` на тестовом графе
-и на двух реальных репозиториях Ubuntu (нужен доступ в интернет):
+## 5. Сравнение со штатными инструментами apt (`apt-cache` / `debtree`)
 
-- jammy main (22.04): `curl`, `libcurl4`, `libjq1`,
-  `openssh-client` с `--filter`, `nano` (нет зависящих),
-  неверная версия и неизвестный пакет;
-- noble main (24.04): `curl`, `wget`.
+Штатные средства визуализации и анализа зависимостей в Ubuntu/Debian —
+`apt-cache dotty <pkg>`, `apt-cache depends --recurse <pkg>` и `debtree <pkg>`.
+При сравнении наших графов (`jq`, `nano`, `curl`) с их выводом возможны
+следующие расхождения и их причины:
 
-Ошибки:
-
-```text
-ошибка: без --test-mode --repo должен быть URL (http:// или https://)
-ошибка: не удалось загрузить репозиторий: ...
-ошибка: пакет не найден: nosuchpkg
-```
+1. **Только поле `Depends`:** наш инструмент разбирает строго поле
+   `Depends` выбранного файла `Packages.gz`, тогда как `apt-cache depends`
+   и `debtree` по умолчанию дополнительно включают `Pre-Depends`,
+   `Recommends` и `Suggests` (например, у `curl` появляется `ca-certificates`
+   через `Recommends`).
+2. **Один срез индекса (`main`) против всех подключённых источников:**
+   мы анализируем конкретный URL индекса (например, `jammy/main`),
+   а `apt-cache` объединяет `main`, `updates`, `security`, `universe`
+   и локальный `/var/lib/dpkg/status`, поэтому версии и транзитивные
+   зависимости пакетов, обновлённых в `jammy-updates`/`jammy-security`,
+   могут отличаться.
+3. **Альтернативные зависимости (`A | B`) и виртуальные пакеты:**
+   наш парсер включает все пакеты из OR-группы `Depends` и ищет точное
+   совпадение `Package`, тогда как `apt`/`debtree` выбирают приоритетную
+   альтернативу и разрешают виртуальные пакеты через поле `Provides`.
+4. **Ограничение глубины и фильтрация:** наш инструмент поддерживает
+   `--max-depth` и `--filter`, а `apt-cache dotty` строит полный граф
+   до базовых пакетов системы (`libgcc-s1`, `gcc-12-base`, ` debconf`).

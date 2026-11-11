@@ -9,6 +9,7 @@ from pathlib import Path
 MIN_DEPTH = 1
 EXIT_OK = 0
 EXIT_ERROR = 1
+PNG_EXTENSION = ".png"
 
 PARAM_ORDER = (
     "package",
@@ -145,9 +146,9 @@ def _validate_output(name: str) -> str:
     path = Path(name)
     if path.name == "" or path.name in {".", ".."}:
         raise ValueError("некорректное имя файла (--output)")
-    if path.suffix == "":
+    if path.suffix.lower() != PNG_EXTENSION:
         raise ValueError(
-            "имя файла изображения должно содержать расширение"
+            "имя файла изображения должно иметь расширение .png"
         )
     return name
 

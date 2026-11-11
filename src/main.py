@@ -17,6 +17,7 @@ from reverse import (
     build_reverse_from_test,
     flip_edges,
 )
+from visualize import render_png
 
 Edge = tuple[str, str]
 NO_REVERSE_DEPS = "обратных зависимостей нет"
@@ -24,7 +25,7 @@ NO_REVERSE_DEPS = "обратных зависимостей нет"
 
 def main(argv: list[str] | None = None) -> int:
     """
-    Загружает параметры и печатает граф зависимостей.
+    Загружает параметры, строит граф и сохраняет его в PNG (D2).
 
     Returns:
         Код завершения процесса.
@@ -32,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         config = load_config(argv)
         edges = _build_edges(config)
+        render_png(edges, config.package, config.output)
     except ValueError as err:
         print(f"ошибка: {err}", file=sys.stderr)
         return EXIT_ERROR
