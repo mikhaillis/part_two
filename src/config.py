@@ -121,6 +121,15 @@ def _validate_repo(repo: str, test_mode: bool) -> str:
         return str(path)
     if not repo:
         raise ValueError("не указан адрес репозитория (--repo)")
+    lowered = repo.lower()
+    if not (
+        lowered.startswith("http://")
+        or lowered.startswith("https://")
+    ):
+        raise ValueError(
+            "без --test-mode --repo должен быть URL "
+            "(http:// или https://)"
+        )
     return repo
 
 

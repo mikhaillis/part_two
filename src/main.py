@@ -44,7 +44,7 @@ def _build_edges(config: AppConfig) -> list[tuple[str, str]]:
             config.max_depth,
             config.filter,
         )
-    index = load_repository(config.repo, test_mode=False)
+    index = load_repository(config.repo)
     return build_graph_from_apt(
         index,
         config.package,

@@ -5,7 +5,6 @@ from __future__ import annotations
 import gzip
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 FIELD_PACKAGE = "Package"
 FIELD_VERSION = "Version"
@@ -83,12 +82,6 @@ def _looks_like_gzip(data: bytes) -> bool:
     return data[0] == GZIP_MAGIC_0 and data[1] == GZIP_MAGIC_1
 
 
-def _read_local_text(path: Path) -> str:
-    """Читает локальный файл индекса Packages."""
-    raw = path.read_bytes()
-    return _decode_packages_bytes(raw, path.name)
-
-
 def _split_paragraphs(text: str) -> list[str]:
     """Делит текст Packages на параграфы пакетов."""
     normalized = text.replace("\r\n", "\n").strip()
@@ -144,27 +137,15 @@ def parse_packages_text(text: str) -> PackageIndex:
     return index
 
 
-def load_repository(repo: str, test_mode: bool = False) -> PackageIndex:
+def load_repository(repo: str) -> PackageIndex:
     """
-    Загружает индекс пакетов из локального файла или по URL.
-
-    Локальный файл используется при test_mode или если repo —
-    путь к существующему файлу.
+    Загружает индекс пакетов по URL репозитория apt.
 
     Raises:
         ValueError: если источник недоступен или пуст.
     """
-    path = Path(repo)
-    use_local = test_mode or path.is_file()
-    if use_local:
-        if not path.is_file():
-            raise ValueError(
-                "не удалось прочитать локальный индекс Packages"
-            )
-        text = _read_local_text(path)
-    else:
-        raw = _read_url_bytes(repo)
-        text = _decode_packages_bytes(raw, repo)
+    raw = _read_url_bytes(repo)
+    text = _decode_packages_bytes(raw, repo)
     index = parse_packages_text(text)
     if index.is_empty():
         raise ValueError("индекс пакетов пуст или имеет неверный формат")

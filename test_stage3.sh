@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 set -e
 
+REPO="http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz"
+VER="7.81.0-1"
+
 echo "=== Stage 3: simple graph ==="
 python3 src/main.py --package A --repo tests/graph_simple.txt \
   --test-mode --pkg-version 1 --output graph.png --max-depth 3
@@ -21,9 +24,14 @@ python3 src/main.py --package A --repo tests/graph_simple.txt \
   --test-mode --pkg-version 1 --output graph.png --max-depth 3 --filter B
 
 echo
-echo "=== Stage 3: apt graph from local Packages ==="
-python3 src/main.py --package curl --repo tests/sample_packages.txt \
-  --pkg-version 7.68.0 --output graph.png --max-depth 2
+echo "=== Stage 3: apt graph from repository URL ==="
+python3 src/main.py --package curl --repo "$REPO" \
+  --pkg-version "$VER" --output graph.png --max-depth 2
+
+echo
+echo "=== Stage 3: apt graph with filter ==="
+python3 src/main.py --package curl --repo "$REPO" \
+  --pkg-version "$VER" --output graph.png --max-depth 2 --filter ssl
 
 echo
 echo "=== Stage 3: unknown root ==="

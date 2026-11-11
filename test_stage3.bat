@@ -1,6 +1,8 @@
 @echo off
 chcp 65001 > nul
 setlocal
+set REPO=http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz
+set VER=7.81.0-1
 
 echo === Stage 3: simple graph ===
 python src\main.py --package A --repo tests\graph_simple.txt --test-mode --pkg-version 1 --output graph.png --max-depth 3
@@ -22,8 +24,13 @@ python src\main.py --package A --repo tests\graph_simple.txt --test-mode --pkg-v
 if errorlevel 1 exit /b 1
 
 echo.
-echo === Stage 3: apt graph from local Packages ===
-python src\main.py --package curl --repo tests\sample_packages.txt --pkg-version 7.68.0 --output graph.png --max-depth 2
+echo === Stage 3: apt graph from repository URL ===
+python src\main.py --package curl --repo %REPO% --pkg-version %VER% --output graph.png --max-depth 2
+if errorlevel 1 exit /b 1
+
+echo.
+echo === Stage 3: apt graph with filter ===
+python src\main.py --package curl --repo %REPO% --pkg-version %VER% --output graph.png --max-depth 2 --filter ssl
 if errorlevel 1 exit /b 1
 
 echo.
