@@ -18,6 +18,7 @@ PARAM_ORDER = (
     "output",
     "max_depth",
     "filter",
+    "reverse",
 )
 
 
@@ -32,6 +33,7 @@ class AppConfig:
     output: str
     max_depth: int
     filter: str
+    reverse: bool = False
 
 
 def _add_str_option(
@@ -79,6 +81,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--filter",
         "Подстрока для фильтрации пакетов",
         default="",
+    )
+    parser.add_argument(
+        "--reverse",
+        action="store_true",
+        help="Вывести обратные зависимости (кто зависит от пакета)",
     )
     return parser
 
@@ -177,6 +184,7 @@ def validate_config(args: argparse.Namespace) -> AppConfig:
         output=output,
         max_depth=max_depth,
         filter=filter_value,
+        reverse=bool(args.reverse),
     )
 
 

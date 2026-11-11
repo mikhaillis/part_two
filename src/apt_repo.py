@@ -51,6 +51,10 @@ class PackageIndex:
         """Возвращает известные версии пакета."""
         return [ver for (pkg, ver) in self._by_key if pkg == name]
 
+    def records(self) -> list[PackageRecord]:
+        """Возвращает все записи пакетов индекса."""
+        return list(self._by_key.values())
+
     def is_empty(self) -> bool:
         """Проверяет, что индекс не содержит пакетов."""
         return not self._by_key
@@ -186,6 +190,29 @@ def _add_group_names(
             names.append(name)
 
 
+def require_record(
+    index: PackageIndex,
+    name: str,
+    version: str,
+) -> PackageRecord:
+    """
+    Возвращает запись пакета указанной версии.
+
+    Raises:
+        ValueError: если пакет или версия не найдены.
+    """
+    record = index.get(name, version)
+    if record is not None:
+        return record
+    known = index.versions_of(name)
+    if not known:
+        raise ValueError(f"пакет не найден: {name}")
+    raise ValueError(
+        f"версия {version} пакета {name} не найдена "
+        f"(доступны: {', '.join(known)})"
+    )
+
+
 def get_direct_dependencies(
     index: PackageIndex,
     name: str,
@@ -197,13 +224,5 @@ def get_direct_dependencies(
     Raises:
         ValueError: если пакет или версия не найдены.
     """
-    record = index.get(name, version)
-    if record is None:
-        known = index.versions_of(name)
-        if not known:
-            raise ValueError(f"пакет не найден: {name}")
-        raise ValueError(
-            f"версия {version} пакета {name} не найдена "
-            f"(доступны: {', '.join(known)})"
-        )
+    record = require_record(index, name, version)
     return parse_depends(record.depends)

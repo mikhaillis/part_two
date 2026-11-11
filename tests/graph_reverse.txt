@@ -1,0 +1,8 @@
+# Graph for reverse dependencies: D is used by B, C and E
+A -> B
+A -> C
+B -> D
+C -> D
+E -> D
+F -> E
+D -> G

@@ -12,6 +12,14 @@ from graph import (
     format_edges,
     load_test_graph,
 )
+from reverse import (
+    build_reverse_from_apt,
+    build_reverse_from_test,
+    flip_edges,
+)
+
+Edge = tuple[str, str]
+NO_REVERSE_DEPS = "обратных зависимостей нет"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,10 +39,19 @@ def main(argv: list[str] | None = None) -> int:
     text = format_edges(edges)
     if text:
         print(text)
+    elif config.reverse:
+        print(NO_REVERSE_DEPS)
     return EXIT_OK
 
 
-def _build_edges(config: AppConfig) -> list[tuple[str, str]]:
+def _build_edges(config: AppConfig) -> list[Edge]:
+    """Выбирает режим: прямые или обратные зависимости."""
+    if config.reverse:
+        return flip_edges(_build_reverse(config))
+    return _build_direct(config)
+
+
+def _build_direct(config: AppConfig) -> list[Edge]:
     """Строит рёбра графа в тестовом или apt-режиме."""
     if config.test_mode:
         adjacency = load_test_graph(config.repo)
@@ -46,6 +63,26 @@ def _build_edges(config: AppConfig) -> list[tuple[str, str]]:
         )
     index = load_repository(config.repo)
     return build_graph_from_apt(
+        index,
+        config.package,
+        config.pkg_version,
+        config.max_depth,
+        config.filter,
+    )
+
+
+def _build_reverse(config: AppConfig) -> list[Edge]:
+    """Строит рёбра обратных зависимостей (зависимый <- пакет)."""
+    if config.test_mode:
+        adjacency = load_test_graph(config.repo)
+        return build_reverse_from_test(
+            adjacency,
+            config.package,
+            config.max_depth,
+            config.filter,
+        )
+    index = load_repository(config.repo)
+    return build_reverse_from_apt(
         index,
         config.package,
         config.pkg_version,

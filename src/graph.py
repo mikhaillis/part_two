@@ -5,7 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
-from apt_repo import PackageIndex, get_direct_dependencies, parse_depends
+from apt_repo import (
+    PackageIndex,
+    get_direct_dependencies,
+    parse_depends,
+    require_record,
+)
 
 NeighborsFn = Callable[[str], list[str]]
 
@@ -153,6 +158,7 @@ def build_graph_from_test(
         raise ValueError(f"пакет не найден в тестовом графе: {root}")
 
     def neighbors(name: str) -> list[str]:
+        """Возвращает прямые зависимости из тестового графа."""
         return list(adjacency.get(name, []))
 
     builder = GraphBuilder(max_depth, name_filter, neighbors)
@@ -167,16 +173,10 @@ def build_graph_from_apt(
     name_filter: str,
 ) -> list[tuple[str, str]]:
     """Строит граф по индексу apt для заданной версии корня."""
-    if index.get(root, version) is None:
-        known = index.versions_of(root)
-        if not known:
-            raise ValueError(f"пакет не найден: {root}")
-        raise ValueError(
-            f"версия {version} пакета {root} не найдена "
-            f"(доступны: {', '.join(known)})"
-        )
+    require_record(index, root, version)
 
     def neighbors(name: str) -> list[str]:
+        """Возвращает зависимости: для корня — заданной версии."""
         if name == root:
             return _deps_from_record(index, name, version)
         return _deps_from_index(index, name)
